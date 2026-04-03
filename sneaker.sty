@@ -1,0 +1,766 @@
+%% sneaker.sty
+%% Copyright 2026 Aaron Molt
+%%
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either
+%% version 1.3c of this license or (at your option) any later version.
+%% The latest version of this license is in:
+%%   https://www.latex-project.org/lppl.txt
+%%
+%% Maintainer: https://github.com/Aargon06/sneaker
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sneaker}[2026/04/03 v1.0 Configurable TikZ sneaker package]
+ 
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+ 
+%% ---- Feature flags ----
+\newif\ifsneakerlaces
+\newif\ifsneakervelcro
+\newif\ifsneakereyelets
+\newif\ifsneakerpattern
+\newif\ifsneakerstitching
+\newif\ifsneakerrolls
+
+%% ---- Pattern type storage ----
+\def\sneakerPatternType{bolt}
+
+%% ---- Custom colour flags ----
+\newif\ifsneakercustompatterncolor
+\newif\ifsneakercustomtonguecolor
+\newif\ifsneakercustomlacecolor
+\newif\ifsneakercustomsolecolor
+\newif\ifsneakercustomtoecapcolor
+ 
+%% ---- Default colour ----
+\colorlet{MainCol}{blue}
+ 
+%% ---- TikZ key interface ----
+\tikzset{
+  sneaker/.cd,
+  color/.code={\colorlet{MainCol}{#1}},
+  laces/.is   if=sneakerlaces,
+  velcro/.is  if=sneakervelcro,
+  eyelets/.is if=sneakereyelets,
+  pattern/.is if=sneakerpattern,
+  stitching/.is if=sneakerstitching,
+  rolls/.is if=sneakerrolls,
+  %% Pattern type: bolt (default) or star
+  pattern type/.store in=\sneakerPatternType,
+  pattern type/.default=bolt,
+  %% Shortcuts — paths relative to sneaker/.cd
+  bolt/.style={pattern=true, pattern type=bolt},
+  star/.style={pattern=true, pattern type=star},
+  %% Configurable colours
+  pattern color/.code={\colorlet{CustomPatternCol}{#1}\sneakercustompatterncolortrue},
+  tongue color/.code={\colorlet{CustomTongueCol}{#1}\sneakercustomtonguecolortrue},
+  lace color/.code={\colorlet{CustomLaceCol}{#1}\sneakercustomlacecolortrue},
+  sole color/.code={\colorlet{CustomSoleCol}{#1}\sneakercustomsolecolortrue},
+  toe cap color/.code={\colorlet{CustomToeCapCol}{#1}\sneakercustomtoecapcolortrue},
+}
+ 
+%% ===============================================================
+%% Shared profile macros
+%% ===============================================================
+ 
+\newcommand{\sneakerUpperNear}{%
+  (0.12, 0.34)
+  .. controls (0.04,0.50) and (0.02,0.72)  .. (0.02, 0.88)
+  .. controls (0.02,1.02) and (0.04,1.14)  .. (0.08, 1.20)
+  .. controls (0.10,1.34) and (0.20,1.42)  .. (0.34, 1.40)
+  .. controls (0.48,1.36) and (0.56,1.28)  .. (0.68, 1.23)
+  .. controls (0.85,1.22) and (1.00,1.21)  .. (1.15, 1.20)
+  .. controls (1.50,1.12) and (1.85,1.02)  .. (2.10, 0.94)
+  .. controls (2.50,0.78) and (2.80,0.55)  .. (3.00, 0.34)
+}
+ 
+\newcommand{\sneakerBevelInner}{%
+  (2.94, 0.42)
+  .. controls (2.74,0.60) and (2.44,0.82)  .. (2.05, 0.98)
+  .. controls (1.80,1.06) and (1.46,1.15)  .. (1.15, 1.14)
+  .. controls (1.00,1.15) and (0.85,1.16)  .. (0.68, 1.17)
+  .. controls (0.56,1.22) and (0.48,1.30)  .. (0.34, 1.34)
+  .. controls (0.22,1.36) and (0.14,1.28)  .. (0.12, 1.16)
+  .. controls (0.08,1.04) and (0.08,0.88)  .. (0.08, 0.74)
+}
+ 
+\newcommand{\sneakerUpperFar}{%
+  ({0.12+\dx}, {0.34+\dy})
+  .. controls ({0.04+\dx},{0.50+\dy}) and ({0.02+\dx},{0.72+\dy})
+  .. ({0.02+\dx}, {0.88+\dy})
+  .. controls ({0.02+\dx},{1.02+\dy}) and ({0.04+\dx},{1.14+\dy})
+  .. ({0.08+\dx}, {1.20+\dy})
+  .. controls ({0.10+\dx},{1.34+\dy}) and ({0.20+\dx},{1.42+\dy})
+  .. ({0.34+\dx}, {1.40+\dy})
+  .. controls ({0.48+\dx},{1.36+\dy}) and ({0.56+\dx},{1.28+\dy})
+  .. ({0.68+\dx}, {1.23+\dy})
+  .. controls ({0.85+\dx},{1.22+\dy}) and ({1.00+\dx},{1.21+\dy})
+  .. ({1.15+\dx}, {1.20+\dy})
+  .. controls ({1.50+\dx},{1.12+\dy}) and ({1.85+\dx},{1.02+\dy})
+  .. ({2.10+\dx}, {0.94+\dy})
+  .. controls ({2.50+\dx},{0.78+\dy}) and ({2.80+\dx},{0.55+\dy})
+  .. ({3.00+\dx}, {0.34+\dy})
+}
+ 
+%% ---- The pic ----
+\tikzset{
+  pics/sneaker/.style={
+    code={
+      %% reset all flags
+      \tikzset{sneaker/laces=false, sneaker/velcro=false,
+               sneaker/eyelets=false, sneaker/pattern=false,
+               sneaker/stitching=false,
+               sneaker/rolls=false}
+      \sneakercustompatterncolorfalse
+      \sneakercustomtonguecolorfalse
+      \sneakercustomlacecolorfalse
+      \sneakercustomsolecolorfalse
+      \sneakercustomtoecapcolorfalse
+      \def\sneakerPatternType{bolt}
+      %% apply caller's keys
+      \tikzset{sneaker/.cd, #1}
+ 
+      %% palette
+      \colorlet{DarkCol}{MainCol!55!black}
+      \colorlet{MidCol}{MainCol!78!black}
+      \colorlet{LightCol}{MainCol!35!white}
+      \ifsneakercustomtoecapcolor
+        \colorlet{ToeCol}{CustomToeCapCol}
+        \colorlet{ToeTopCol}{CustomToeCapCol!85!black}
+      \else
+        \colorlet{ToeCol}{MainCol!12!white}
+        \colorlet{ToeTopCol}{MainCol!22!white}
+      \fi
+      \ifsneakercustomtonguecolor
+        \colorlet{TongueCol}{CustomTongueCol}
+      \else
+        \colorlet{TongueCol}{MainCol!45!white}
+      \fi
+      \colorlet{BevelCol}{MainCol!30!white}
+      \ifsneakercustomlacecolor
+        \colorlet{LaceCol}{CustomLaceCol}
+      \else
+        \colorlet{LaceCol}{white!90!yellow}
+      \fi
+      \ifsneakercustompatterncolor
+        \colorlet{PatternCol}{CustomPatternCol}
+      \else
+        \colorlet{PatternCol}{white}
+      \fi
+      \ifsneakercustomsolecolor
+        \colorlet{SoleCol}{CustomSoleCol}
+      \else
+        \colorlet{SoleCol}{white}
+      \fi
+ 
+      %% depth offset
+      \pgfmathsetmacro{\dx}{0.60}
+      \pgfmathsetmacro{\dy}{0.35}
+      \pgfmathsetmacro{\bump}{0.08}
+
+      %% stitch style
+      \tikzset{sneaker stitch/.style={
+        black!40, line width=0.25pt,
+        dash pattern=on 0.8pt off 0.6pt,
+        line cap=round
+      }}
+ 
+      \begin{scope}[line join=round, line cap=round]
+
+      %% Wheel parameters (needed early for far-side rolls in L1)
+      \pgfmathsetmacro{\wheelR}{0.16}
+      \pgfmathsetmacro{\hubR}{0.06}
+      \pgfmathsetmacro{\axleR}{0.025}
+      \pgfmathsetmacro{\wheelEmbed}{0.08}
+      \pgfmathsetmacro{\wheelY}{-\wheelR+\wheelEmbed}
+      \pgfmathsetmacro{\wA}{0.55}
+      \pgfmathsetmacro{\wB}{1.55}
+      \pgfmathsetmacro{\wC}{2.55}
+ 
+      %% =============================================================
+      %% L1  –  FAR SIDE
+      %% =============================================================
+
+      %% Far sole
+      \fill[SoleCol!96!black, draw=black!20, line width=0.3pt]
+        ({0.10+\dx}, {\dy})
+        .. controls ({0.04+\dx},{\dy}) and ({0.02+\dx},{0.14+\dy})
+        .. ({0.06+\dx}, {0.34+\dy})
+        -- ({2.95+\dx}, {0.34+\dy})
+        .. controls ({3.08+\dx},{0.34+\dy}) and ({3.16+\dx},{0.18+\dy})
+        .. ({3.14+\dx}, {\dy})
+        -- cycle;
+ 
+
+      %% ---- FAR SIDE ROLLS (behind everything) ----
+      \ifsneakerrolls
+        %% Far bracket
+        \fill[black!18, draw=black!30, line width=0.2pt]
+          ({0.25+\dx}, {\dy})
+          -- ({3.00+\dx}, {\dy})
+          -- ({3.00+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          .. controls ({\wC+\wheelR+0.02+\dx}, {\wheelY-\wheelR*0.15+\dy})
+                  and ({\wC-\wheelR-0.02+\dx}, {\wheelY-\wheelR*0.15+\dy})
+          .. ({\wC-\wheelR-0.02+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          -- ({\wB+\wheelR+0.04+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          .. controls ({\wB+\wheelR+0.04+\dx}, {\wheelY-\wheelR*0.15+\dy})
+                  and ({\wB-\wheelR-0.04+\dx}, {\wheelY-\wheelR*0.15+\dy})
+          .. ({\wB-\wheelR-0.04+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          -- ({\wA+\wheelR+0.04+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          .. controls ({\wA+\wheelR+0.04+\dx}, {\wheelY-\wheelR*0.15+\dy})
+                  and ({\wA-\wheelR-0.02+\dx}, {\wheelY-\wheelR*0.15+\dy})
+          .. ({\wA-\wheelR-0.02+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          -- ({0.25+\dx}, {\wheelY+\wheelR*0.3+\dy})
+          -- cycle;
+        %% Far wheels
+        \foreach \wx in {\wA, \wB, \wC} {
+          \fill[black!60, draw=black!70, line width=0.2pt]
+            ({\wx+\dx}, {\wheelY+\dy}) circle (\wheelR);
+          \fill[white!85!black, draw=black!25, line width=0.2pt]
+            ({\wx+\dx}, {\wheelY+\dy}) circle ({\wheelR*0.72});
+          \foreach \a in {0,60,...,300} {
+            \draw[black!12, line width=0.15pt]
+              ({\wx+\dx}, {\wheelY+\dy}) -- +(\a:{\wheelR*0.68});
+          }
+          \fill[gray!40, draw=black!35, line width=0.2pt]
+            ({\wx+\dx}, {\wheelY+\dy}) circle (\hubR);
+          \fill[black!45]
+            ({\wx+\dx}, {\wheelY+\dy}) circle (\axleR);
+        }
+        %% Tire sidewalls (depth connecting far→near, visible below sole)
+        %% Only draw the bottom arc of each wheel (visible part)
+        \foreach \wx in {\wA, \wB, \wC} {
+          \fill[black!55, draw=black!65, line width=0.15pt]
+            ({\wx-\wheelR}, \wheelY)
+            arc[start angle=180, end angle=360, radius=\wheelR]
+            -- ({\wx+\wheelR+\dx}, {\wheelY+\dy})
+            arc[start angle=0, end angle=-180, radius=\wheelR]
+            -- cycle;
+        }
+      \fi
+
+      %% Far upper
+      \fill[MidCol, draw=black!25, line width=0.3pt]
+        \sneakerUpperFar -- cycle;
+ 
+      %% Far heel counter
+      \fill[DarkCol!75!black, draw=black!20, line width=0.3pt]
+        ({0.12+\dx}, {0.34+\dy})
+        .. controls ({0.04+\dx},{0.50+\dy}) and ({0.02+\dx},{0.72+\dy})
+        .. ({0.02+\dx}, {0.88+\dy})
+        .. controls ({0.02+\dx},{1.02+\dy}) and ({0.04+\dx},{1.14+\dy})
+        .. ({0.08+\dx}, {1.20+\dy})
+        -- ({0.36+\dx}, {1.12+\dy})
+        .. controls ({0.38+\dx}, {0.70+\dy}) and ({0.42+\dx}, {0.45+\dy})
+        .. ({0.48+\dx}, {0.34+\dy})
+        -- cycle;
+ 
+      %% =============================================================
+      %% L2  –  TOP SURFACES
+      %% =============================================================
+ 
+      %% Top of sole
+      \fill[SoleCol, draw=black!15, line width=0.3pt]
+        (0.06, 0.34)
+        .. controls ({0.08+\dx*0.5}, {0.34+\dy*0.5+\bump})
+        .. ({0.08+\dx}, {0.34+\dy})
+        -- ({2.95+\dx}, {0.34+\dy})
+        .. controls ({2.95+\dx*0.5}, {0.34+\dy*0.5+\bump})
+        .. (2.95, 0.34)
+        -- cycle;
+
+      %% Heel tab top
+      \fill[LightCol, draw=black!25, line width=0.3pt]
+        (0.06, 1.22)
+        .. controls (0.08,1.36) and (0.18,1.44) .. (0.34, 1.42)
+        .. controls ({0.34+\dx*0.5}, {1.42+\dy*0.5+\bump*0.8})
+        .. ({0.34+\dx}, {1.42+\dy})
+        .. controls ({0.18+\dx},{1.44+\dy}) and ({0.08+\dx},{1.36+\dy})
+        .. ({0.06+\dx}, {1.22+\dy})
+        .. controls ({0.06+\dx*0.5}, {1.22+\dy*0.5+\bump*1.2})
+        .. (0.06, 1.22);
+ 
+      %% Collar opening / shoe interior
+      \fill[MidCol]
+        (0.34, 1.42)
+        .. controls (0.46,1.38) and (0.56,1.30) .. (0.68, 1.25)
+        .. controls (0.80,1.24) and (0.90,1.23) .. (1.00, 1.22)
+        -- (1.00, 0.60)
+        .. controls ({1.00+\dx*0.5}, {0.60+\dy*0.5+\bump})
+        .. ({1.00+\dx}, {0.60+\dy})
+        -- ({1.00+\dx}, {1.22+\dy})
+        .. controls ({0.90+\dx},{1.23+\dy}) and ({0.80+\dx},{1.24+\dy})
+        .. ({0.68+\dx}, {1.25+\dy})
+        .. controls ({0.56+\dx},{1.30+\dy}) and ({0.46+\dx},{1.38+\dy})
+        .. ({0.34+\dx}, {1.42+\dy})
+        .. controls ({0.34+\dx*0.5}, {1.42+\dy*0.5+\bump*0.8})
+        .. (0.34, 1.42);
+      \fill[black, opacity=0.35]
+        (0.34, 1.42)
+        .. controls (0.46,1.38) and (0.56,1.30) .. (0.68, 1.25)
+        .. controls (0.80,1.24) and (0.90,1.23) .. (1.00, 1.22)
+        -- (1.00, 0.60)
+        .. controls ({1.00+\dx*0.5}, {0.60+\dy*0.5+\bump})
+        .. ({1.00+\dx}, {0.60+\dy})
+        -- ({1.00+\dx}, {1.22+\dy})
+        .. controls ({0.90+\dx},{1.23+\dy}) and ({0.80+\dx},{1.24+\dy})
+        .. ({0.68+\dx}, {1.25+\dy})
+        .. controls ({0.56+\dx},{1.30+\dy}) and ({0.46+\dx},{1.38+\dy})
+        .. ({0.34+\dx}, {1.42+\dy})
+        .. controls ({0.34+\dx*0.5}, {1.42+\dy*0.5+\bump*0.8})
+        .. (0.34, 1.42);
+
+      %% ---- COLLAR PADDING ----
+      \colorlet{CollarPadCol}{MainCol!38!white}
+      \fill[CollarPadCol, draw=black!30, line width=0.3pt]
+        (0.34, 1.42)
+        .. controls (0.46,1.38) and (0.56,1.30) .. (0.68, 1.25)
+        .. controls ({0.68+\dx*0.35}, {1.25+\dy*0.35+0.10})
+        .. ({0.68+\dx}, {1.25+\dy})
+        .. controls ({0.56+\dx},{1.30+\dy}) and ({0.46+\dx},{1.38+\dy})
+        .. ({0.34+\dx}, {1.42+\dy})
+        .. controls ({0.34+\dx*0.5}, {1.42+\dy*0.5+0.18})
+        .. (0.34, 1.42);
+      \fill[MainCol!20!white, opacity=0.45]
+        (0.36, 1.41)
+        .. controls (0.46,1.37) and (0.55,1.30) .. (0.65, 1.26)
+        .. controls ({0.65+\dx*0.35}, {1.26+\dy*0.35+0.12})
+        .. ({0.65+\dx}, {1.26+\dy})
+        .. controls ({0.55+\dx},{1.31+\dy}) and ({0.46+\dx},{1.37+\dy})
+        .. ({0.36+\dx}, {1.41+\dy})
+        .. controls ({0.36+\dx*0.5}, {1.41+\dy*0.5+0.20})
+        .. (0.36, 1.41);
+      
+      %% ---- FAR SIDE EYESTAY ----
+      \fill[MidCol, draw=black!45, line width=0.3pt]
+        ({1.15+\dx}, {1.20+\dy})
+        .. controls ({1.50+\dx},{1.12+\dy}) and ({1.85+\dx},{1.02+\dy})
+        .. ({2.10+\dx}, {0.94+\dy})
+        -- ({2.10+\dx}, {0.94+\dy - 0.08})
+        .. controls ({1.85+\dx},{1.02+\dy - 0.08}) and ({1.50+\dx},{1.12+\dy - 0.08})
+        .. ({1.15+\dx}, {1.20+\dy - 0.08})
+        -- cycle;
+
+      %% ---- EYELETS FAR SIDE ----
+      \ifsneakereyelets
+        \foreach \i in {0,...,3} {
+          \pgfmathsetmacro{\t}{\i/4}
+          \pgfmathsetmacro{\nex}{1.15 + \t*(2.10-1.15)}
+          \pgfmathsetmacro{\ney}{1.20 + \t*(0.94-1.20) - 0.06}
+          \pgfmathsetmacro{\fex}{\nex + \dx}
+          \pgfmathsetmacro{\fey}{\ney + \dy}
+          \fill[gray!50] (\fex, \fey) circle (0.04);
+          \fill[black!45] (\fex, \fey) circle (0.018);
+        }
+      \fi
+
+      %% ---- TONGUE ----
+      \pgfmathsetmacro{\bumpToe}{0.04}
+      \pgfmathsetmacro{\bumpCollar}{0.26}
+ 
+      \fill[TongueCol, draw=black!30, line width=0.3pt]
+        (1.15, 1.20)
+        .. controls (1.50,1.12) and (1.85,1.02) .. (2.10, 0.94)
+        .. controls ({2.10+\dx*0.5}, {0.94+\dy*0.5+\bumpToe})
+        .. ({2.10+\dx}, {0.94+\dy-0.01})
+        .. controls ({1.85+\dx},{1.02+\dy-0.07}) and ({1.50+\dx},{1.12+\dy-0.07})
+        .. ({1.15+\dx}, {1.20+\dy-0.02})
+        .. controls ({1.15+\dx*0.5}, {1.20+\dy*0.5+\bumpCollar})
+        .. (1.15, 1.20);
+
+      \fill[black, opacity=0.18]
+        (1.15, 1.20)
+        .. controls (1.50,1.12) and (1.85,1.02) .. (2.10, 0.94)
+        .. controls ({2.10+\dx*0.5}, {0.94+\dy*0.5+\bumpToe})
+        .. ({2.10+\dx}, {0.94+\dy-0.01})
+        .. controls ({1.85+\dx},{1.02+\dy-0.07}) and ({1.50+\dx},{1.12+\dy-0.07})
+        .. ({1.15+\dx}, {1.20+\dy-0.02})
+        .. controls ({1.15+\dx*0.5}, {1.20+\dy*0.5+\bumpCollar})
+        .. (1.15, 1.20);
+ 
+      %% Toe cap top
+      \fill[ToeTopCol, draw=black!30, line width=0.3pt]
+        (2.35, 0.80)
+        .. controls (2.60,0.68) and (2.80,0.50) .. (2.95, 0.33)
+        .. controls ({2.95+\dx*0.5}, {0.34+\dy*0.5+\bump})
+        .. ({2.98+\dx}, {0.35+\dy})
+        .. controls ({2.82+\dx},{0.50+\dy}) and ({2.60+\dx},{0.68+\dy})
+        .. ({2.36+\dx}, {0.81+\dy})
+        .. controls ({2.35+\dx*0.5}, {0.80+\dy*0.5+\bump})
+        .. (2.35, 0.80);
+ 
+      %% =============================================================
+      %% L3  –  NEAR SIDE UPPER
+      %% =============================================================
+ 
+      \fill[MainCol, draw=black!45, line width=0.4pt]
+        \sneakerUpperNear -- cycle;
+ 
+      %% Toe cap
+      \fill[ToeCol, draw=black!45, line width=0.4pt]
+        (2.15, 0.34)
+        .. controls (2.20,0.34) and (2.40,0.34) .. (3.00, 0.34)
+        .. controls (2.80,0.55) and (2.60,0.68) .. (2.36, 0.81)
+        .. controls (2.25,0.68) and (2.18,0.52) .. (2.15, 0.34);
+ 
+      %% Heel counter
+      \fill[DarkCol, draw=black!45, line width=0.4pt]
+        (0.12, 0.34)
+        .. controls (0.04,0.50) and (0.02,0.72) .. (0.02, 0.88)
+        .. controls (0.02,1.02) and (0.04,1.14) .. (0.08, 1.2)
+        -- (0.36, 1.12)
+        .. controls (0.38, 0.70) and (0.42, 0.45) .. (0.48, 0.34)
+        -- cycle;
+ 
+      %% Side panel
+      \fill[MidCol, draw=black!15, line width=0.3pt, opacity=0.25]
+        (0.50, 0.42)
+        .. controls (0.46,0.55) and (0.44,0.72) .. (0.46, 0.88)
+        .. controls (0.95,0.98) and (1.50,0.94) .. (2.00, 0.78)
+        .. controls (2.02,0.60) and (2.02,0.45) .. (2.00, 0.42)
+        -- cycle;
+ 
+      %% ---- BEVEL ----
+      \fill[BevelCol, opacity=0.50]
+        (0.06, 1.22)
+        .. controls (0.08,1.36) and (0.18,1.44) .. (0.34, 1.42)
+        .. controls (0.46,1.38) and (0.56,1.30) .. (0.68, 1.25)
+        .. controls (0.80,1.24) and (0.94,1.23) .. (1.10, 1.22)
+        .. controls (1.42,1.18) and (1.72,1.12) .. (2.00, 1.04)
+        .. controls (2.30,0.94) and (2.58,0.82) .. (2.82, 0.68)
+        .. controls (3.00,0.58) and (3.12,0.48) .. (3.20, 0.36)
+        -- (3.14, 0.42)
+        .. controls (3.06,0.52) and (2.94,0.62) .. (2.76, 0.72)
+        .. controls (2.52,0.86) and (2.24,0.98) .. (1.96, 1.08)
+        .. controls (1.68,1.16) and (1.38,1.20) .. (1.10, 1.16)
+        .. controls (0.94,1.17) and (0.80,1.18) .. (0.68, 1.19)
+        .. controls (0.56,1.24) and (0.46,1.32) .. (0.34, 1.36)
+        .. controls (0.20,1.38) and (0.12,1.30) .. (0.10, 1.18)
+        -- cycle;
+
+      %% =============================================================
+      %% L4  –  NEAR SIDE SOLE  (with optional wheel wells)
+      %% =============================================================
+
+      \ifsneakerrolls
+
+        %% ======== NEAR SOLE with wheel wells ========
+        \fill[SoleCol, draw=black!40, line width=0.4pt]
+          (0.10, {\wheelY+\wheelR*0.3})
+          .. controls (0.04, {\wheelY+\wheelR*0.3}) and (0.02, 0.14) .. (0.06, 0.34)
+          -- (2.95, 0.34)
+          .. controls (3.08, 0.34) and (3.16, 0.18) .. (3.14, {\wheelY+\wheelR*0.3})
+          %% front wheel well
+          .. controls ({\wC+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+                  and ({\wC+\wheelR+0.02}, {\wheelY+\wheelR*0.85})
+          .. ({\wC+\wheelR*0.5}, {\wheelY+\wheelR})
+          .. controls ({\wC}, {\wheelY+\wheelR*1.05})
+                  and ({\wC-\wheelR*0.5}, {\wheelY+\wheelR})
+          .. ({\wC-\wheelR-0.02}, {\wheelY+\wheelR*0.85})
+          .. controls ({\wC-\wheelR-0.04}, {\wheelY+\wheelR*0.3})
+                  and ({\wB+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+          %% middle wheel well
+          .. ({\wB+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+          .. controls ({\wB+\wheelR+0.02}, {\wheelY+\wheelR*0.85})
+                  and ({\wB+\wheelR*0.5}, {\wheelY+\wheelR})
+          .. ({\wB}, {\wheelY+\wheelR*1.05})
+          .. controls ({\wB-\wheelR*0.5}, {\wheelY+\wheelR})
+                  and ({\wB-\wheelR-0.02}, {\wheelY+\wheelR*0.85})
+          .. ({\wB-\wheelR-0.04}, {\wheelY+\wheelR*0.3})
+          %% rear wheel well
+          .. controls ({\wA+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+                  and ({\wA+\wheelR+0.02}, {\wheelY+\wheelR*0.85})
+          .. ({\wA+\wheelR*0.5}, {\wheelY+\wheelR})
+          .. controls ({\wA}, {\wheelY+\wheelR*1.05})
+                  and ({\wA-\wheelR*0.5}, {\wheelY+\wheelR})
+          .. ({\wA-\wheelR-0.02}, {\wheelY+\wheelR*0.85})
+          .. controls ({\wA-\wheelR-0.04}, {\wheelY+\wheelR*0.3})
+                  and (0.12, {\wheelY+\wheelR*0.3})
+          .. (0.10, {\wheelY+\wheelR*0.3})
+          -- cycle;
+        %% accent line
+        \draw[black!13, line width=0.25pt]
+          (0.14, 0.16) .. controls (1.5, 0.16) and (2.8, 0.14) .. (3.06, 0.16);
+
+        %% Near bracket
+        \fill[black!12, draw=black!30, line width=0.2pt]
+          (0.25, 0) -- (3.00, 0)
+          -- (3.00, {\wheelY+\wheelR*0.3})
+          .. controls ({\wC+\wheelR+0.02}, {\wheelY-\wheelR*0.15})
+                  and ({\wC-\wheelR-0.02}, {\wheelY-\wheelR*0.15})
+          .. ({\wC-\wheelR-0.02}, {\wheelY+\wheelR*0.3})
+          -- ({\wB+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+          .. controls ({\wB+\wheelR+0.04}, {\wheelY-\wheelR*0.15})
+                  and ({\wB-\wheelR-0.04}, {\wheelY-\wheelR*0.15})
+          .. ({\wB-\wheelR-0.04}, {\wheelY+\wheelR*0.3})
+          -- ({\wA+\wheelR+0.04}, {\wheelY+\wheelR*0.3})
+          .. controls ({\wA+\wheelR+0.04}, {\wheelY-\wheelR*0.15})
+                  and ({\wA-\wheelR-0.02}, {\wheelY-\wheelR*0.15})
+          .. ({\wA-\wheelR-0.02}, {\wheelY+\wheelR*0.3})
+          -- (0.25, {\wheelY+\wheelR*0.3})
+          -- cycle;
+
+        %% ======== NEAR WHEELS (with tire depth) ========
+        \foreach \wx in {\wA, \wB, \wC} {
+          %% Tire (outer ring)
+          \fill[black!70, draw=black!80, line width=0.3pt]
+            (\wx, \wheelY) circle (\wheelR);
+          %% Rim
+          \fill[white!92!black, draw=black!30, line width=0.2pt]
+            (\wx, \wheelY) circle ({\wheelR*0.72});
+          %% Spokes
+          \foreach \a in {0,60,...,300} {
+            \draw[black!15, line width=0.2pt]
+              (\wx, \wheelY) -- +(\a:{\wheelR*0.68});
+          }
+          %% Hub
+          \fill[gray!30, draw=black!40, line width=0.25pt]
+            (\wx, \wheelY) circle (\hubR);
+          %% Axle
+          \fill[black!50]
+            (\wx, \wheelY) circle (\axleR);
+        }
+
+        %% Sole toe connection
+        \fill[SoleCol, draw=black!25, line width=0.2pt]
+          (2.98, 0.34)
+          .. controls ({2.98+\dx*0.5}, {0.34+\dy*0.5+\bump})
+          .. ({2.98+\dx}, {0.34+\dy})
+          .. controls ({3.08+\dx},{0.34+\dy}) and ({3.14+\dx},{0.18+\dy})
+          .. ({3.15+\dx}, {\dy})
+          -- (3.15, 0)
+          .. controls (3.14, 0.18) and (3.08, 0.34) .. (2.95, 0.34);
+
+      \else
+        %% ======== NORMAL SOLE (no rolls) ========
+        \fill[SoleCol, draw=black!40, line width=0.4pt]
+          (0.10, 0)
+          .. controls (0.04, 0) and (0.02, 0.14) .. (0.06, 0.34)
+          -- (2.95, 0.34)
+          .. controls (3.08, 0.34) and (3.16, 0.18) .. (3.14, 0)
+          -- cycle;
+        \draw[black!13, line width=0.25pt]
+          (0.14, 0.16) .. controls (1.5, 0.16) and (2.8, 0.14) .. (3.06, 0.16);
+        %% Sole toe connection
+        \fill[SoleCol, draw=black!25, line width=0.2pt]
+          (2.98, 0.34)
+          .. controls ({2.98+\dx*0.5}, {0.34+\dy*0.5+\bump})
+          .. ({2.98+\dx}, {0.34+\dy})
+          .. controls ({3.08+\dx},{0.34+\dy}) and ({3.14+\dx},{0.18+\dy})
+          .. ({3.15+\dx}, {\dy})
+          -- (3.15, 0)
+          .. controls (3.14, 0.18) and (3.08, 0.34) .. (2.95, 0.34);
+      \fi
+
+      %% FEATURES
+      %% =============================================================
+
+      %% ---- STITCHING ----
+      \ifsneakerstitching
+        %% Toe cap seam
+        \draw[sneaker stitch]
+          (2.15, 0.36)
+          .. controls (2.18,0.52) and (2.25,0.68) .. (2.36, 0.81);
+        %% Heel counter seam
+        \draw[sneaker stitch]
+          (0.48, 0.36)
+          .. controls (0.44,0.46) and (0.40,0.62) .. (0.37, 1.10);
+        %% Side panel lower
+        \draw[sneaker stitch]
+          (0.52, 0.44)
+          .. controls (0.90,0.48) and (1.50,0.46) .. (1.98, 0.44);
+        %% Side panel upper curve
+        \draw[sneaker stitch]
+          (0.48, 0.88)
+          .. controls (0.95,0.98) and (1.50,0.94) .. (2.00, 0.78);
+        %% Sole seam (where upper meets sole)
+        \draw[sneaker stitch]
+          (0.14, 0.36)
+          -- (2.92, 0.36);
+      \fi
+ 
+      %% ---- PATTERN ----
+      \ifsneakerpattern
+        \def\tmpbolt{bolt}
+        \def\tmpstar{star}
+        \ifx\sneakerPatternType\tmpstar
+          %% ---- STAR (5-pointed) ----
+          \fill[PatternCol, opacity=0.88]
+            (1.30, 0.92) -- (1.37, 0.73) -- (1.55, 0.67)
+            -- (1.40, 0.58) -- (1.44, 0.38)
+            -- (1.30, 0.50) -- (1.16, 0.38)
+            -- (1.20, 0.58) -- (1.05, 0.67)
+            -- (1.23, 0.73) -- cycle;
+          \draw[PatternCol!50!black, line width=0.3pt, opacity=0.5]
+            (1.30, 0.92) -- (1.37, 0.73) -- (1.55, 0.67)
+            -- (1.40, 0.58) -- (1.44, 0.38)
+            -- (1.30, 0.50) -- (1.16, 0.38)
+            -- (1.20, 0.58) -- (1.05, 0.67)
+            -- (1.23, 0.73) -- cycle;
+        \else
+          %% ---- BOLT (default) ----
+          \fill[PatternCol, opacity=0.88]
+            (1.05, 0.95) -- (1.35, 0.70) -- (1.15, 0.70)
+            -- (1.55, 0.40) -- (1.40, 0.62) -- (1.60, 0.62) -- cycle;
+          \draw[PatternCol!50!black, line width=0.3pt, opacity=0.5]
+            (1.05, 0.95) -- (1.35, 0.70) -- (1.15, 0.70)
+            -- (1.55, 0.40) -- (1.40, 0.62) -- (1.60, 0.62) -- cycle;
+        \fi
+      \fi
+ 
+      %% ---- EYELETS NEAR SIDE ----
+      \ifsneakereyelets
+        \foreach \i in {0,...,4} {
+          \pgfmathsetmacro{\t}{\i/4}
+          \pgfmathsetmacro{\nex}{1.15 + \t*(2.10-1.15)}
+          \pgfmathsetmacro{\ney}{1.20 + \t*(0.94-1.20) - 0.06}
+          \fill[gray!40] (\nex, \ney) circle (0.050);
+          \fill[black!50] (\nex, \ney) circle (0.025);
+        }
+      \fi
+ 
+      %% ---- LACES ----
+      \ifsneakerlaces
+        \pgfmathsetmacro{\outx}{0.032}
+        \pgfmathsetmacro{\outy}{0.074}
+        \pgfmathsetmacro{\inx}{0.01}
+        \pgfmathsetmacro{\iny}{-0.03}
+
+        \ifsneakervelcro
+          \pgfmathsetmacro{\t}{0}
+          \pgfmathsetmacro{\nex}{1.15 + \t*(2.10-1.15)}
+          \pgfmathsetmacro{\ney}{1.20 + \t*(0.94-1.20) - 0.06}
+          \pgfmathsetmacro{\fex}{1.15 + \t*(2.10-1.15) + \dx}
+          \pgfmathsetmacro{\fey}{1.20 + \t*(0.94-1.20) + \dy}
+          \draw[LaceCol, line width=0.7pt] (\nex, \ney) -- (\fex, \fey);
+          \foreach \i in {0,...,1} {
+            \pgfmathsetmacro{\ta}{\i/4}
+            \pgfmathsetmacro{\tb}{(\i+1)/4}
+            \pgfmathsetmacro{\nexa}{1.15 + \ta*(2.10-1.15)}
+            \pgfmathsetmacro{\neya}{1.20 + \ta*(0.94-1.20) - 0.06}
+            \pgfmathsetmacro{\nexb}{1.15 + \tb*(2.10-1.15)}
+            \pgfmathsetmacro{\neyb}{1.20 + \tb*(0.94-1.20) - 0.06}
+            \pgfmathsetmacro{\fexa}{1.15 + \ta*(2.10-1.15) + \dx}
+            \pgfmathsetmacro{\feya}{1.20 + \ta*(0.94-1.20) + \dy}
+            \pgfmathsetmacro{\fexb}{1.15 + \tb*(2.10-1.15) + \dx}
+            \pgfmathsetmacro{\feyb}{1.20 + \tb*(0.94-1.20) + \dy}
+            \draw[LaceCol, line width=0.7pt]
+              (\nexa, \neya) -- ({\fexb+\inx}, {\feyb+\iny});
+            \draw[LaceCol, line width=0.7pt]
+              (\fexa + 0.01, \feya + 0.01) -- (\nexb + \outx, \neyb+ \outy);
+            \pgfmathsetmacro{\tend}{(2)/4}
+            \pgfmathsetmacro{\nex}{1.15 + \tend*(2.10-1.15)}
+            \pgfmathsetmacro{\ney}{1.20 + \tend*(0.94-1.20) - 0.06}
+            \draw[LaceCol, line width=0.7pt] (\nex, \ney) -- ({\nex+\dx}, {\ney+\dy});
+          }
+        \else
+          \pgfmathsetmacro{\t}{0}
+          \pgfmathsetmacro{\nex}{1.15 + \t*(2.10-1.15)}
+          \pgfmathsetmacro{\ney}{1.20 + \t*(0.94-1.20) - 0.06}
+          \pgfmathsetmacro{\fex}{1.15 + \t*(2.10-1.15) + \dx}
+          \pgfmathsetmacro{\fey}{1.20 + \t*(0.94-1.20) + \dy}
+          \draw[LaceCol, line width=0.7pt] (\nex, \ney) -- (\fex, \fey);
+          \foreach \i in {0,...,3} {
+            \pgfmathsetmacro{\ta}{\i/4}
+            \pgfmathsetmacro{\tb}{(\i+1)/4}
+            \pgfmathsetmacro{\nexa}{1.15 + \ta*(2.10-1.15)}
+            \pgfmathsetmacro{\neya}{1.20 + \ta*(0.94-1.20) - 0.06}
+            \pgfmathsetmacro{\nexb}{1.15 + \tb*(2.10-1.15)}
+            \pgfmathsetmacro{\neyb}{1.20 + \tb*(0.94-1.20) - 0.06}
+            \pgfmathsetmacro{\fexa}{1.15 + \ta*(2.10-1.15) + \dx}
+            \pgfmathsetmacro{\feya}{1.20 + \ta*(0.94-1.20) + \dy}
+            \pgfmathsetmacro{\fexb}{1.15 + \tb*(2.10-1.15) + \dx}
+            \pgfmathsetmacro{\feyb}{1.20 + \tb*(0.94-1.20) + \dy}
+            \ifnum\i=3
+              \draw[LaceCol, line width=0.7pt]
+                (\nexa, \neya) -- ({\fexb+\inx-0.1}, {\feyb+\iny-0.02});
+            \else
+              \draw[LaceCol, line width=0.7pt]
+                (\nexa, \neya) -- ({\fexb+\inx}, {\feyb+\iny});
+            \fi
+            \draw[LaceCol, line width=0.7pt]
+              (\fexa + 0.01, \feya + 0.01) -- (\nexb + \outx, \neyb+ \outy);
+            \pgfmathsetmacro{\tend}{(4)/4}
+            \pgfmathsetmacro{\nex}{1.15 + \tend*(2.10-1.15)}
+            \pgfmathsetmacro{\ney}{1.20 + \tend*(0.94-1.20)}
+            \draw[LaceCol, line width=0.7pt]
+              (\nex, \ney -0.06) -- ({\nex+\dx}, {\ney+\dy});
+          }
+        \fi
+
+        %% --- Bow ---
+        \pgfmathsetmacro{\bx}{1.18 + \dx*0.5}
+        \pgfmathsetmacro{\by}{1.20 + \dy*0.5 + 0.01}
+        \begin{scope}[shift={(\bx,\by)}, rotate=37, yscale=0.8, xscale=1.1]
+          \draw[LaceCol, fill=LaceCol] (0,0) circle (0.02);
+          \draw[LaceCol, line width=0.8pt, line cap=round]
+            (0,0) .. controls (-0.4, 0.4) and (-0.8, 0.1) .. (0,0);
+          \draw[LaceCol, line width=0.8pt, line cap=round]
+            (0,0) .. controls (0.5, -0.3) and (0.9, 0.1) .. (0,0);
+          \draw[LaceCol, line width=0.7pt, line cap=round]
+            (0,0) .. controls (-0.2, -0.1) .. (-0.5, -0.2);
+          \draw[LaceCol, line width=0.7pt, line cap=round]
+            (0,0) .. controls (0.2, -0.4) .. (0.6, -0.5);
+        \end{scope}
+      \fi
+ 
+      %% ---- VELCRO ----
+      \ifsneakervelcro
+        \ifsneakerlaces
+          \pgfmathsetmacro{\ta}{0.70}
+          \pgfmathsetmacro{\tb}{0.95}
+          \pgfmathsetmacro{\na}{1.15 + \ta*(2.10-1.15)}
+          \pgfmathsetmacro{\naz}{1.20 + \ta*(0.94-1.20)}
+          \pgfmathsetmacro{\nb}{1.15 + \tb*(2.10-1.15)}
+          \pgfmathsetmacro{\nbz}{1.20 + \tb*(0.94-1.20)}
+          \pgfmathsetmacro{\fa}{\na + \dx}
+          \pgfmathsetmacro{\faz}{\naz + \dy}
+          \pgfmathsetmacro{\fb}{\nb + \dx}
+          \pgfmathsetmacro{\fbz}{\nbz + \dy}
+          \fill[gray!15, draw=gray!55, line width=0.5pt]
+            (\na, \naz) -- (\fa, \faz) -- (\fb, \fbz) -- (\nb, \nbz) -- cycle;
+          \pgfmathsetmacro{\mx}{(\na+\fb)/2}
+          \pgfmathsetmacro{\my}{(\naz+\fbz)/2}
+          \foreach \jj in {-0.08,-0.02,0.04,0.10} {
+            \foreach \kk in {-0.03,0.03} {
+              \fill[gray!40] ({\mx+\jj},{\my+\kk}) circle (0.011);
+            }
+          }
+          \fill[gray!30, draw=gray!60, line width=0.4pt]
+            ({\fa-0.02},\faz) -- ({\fa+0.06},{\faz+0.02})
+            -- ({\fb+0.06},{\fbz+0.02}) -- ({\fb-0.02},\fbz) -- cycle;
+        \else
+          \foreach \i in {0,1} {
+            \pgfmathsetmacro{\ta}{0.12 + \i*0.42}
+            \pgfmathsetmacro{\tb}{\ta + 0.22}
+            \pgfmathsetmacro{\na}{1.15 + \ta*(2.10-1.15)}
+            \pgfmathsetmacro{\naz}{1.20 + \ta*(0.94-1.20)}
+            \pgfmathsetmacro{\nb}{1.15 + \tb*(2.10-1.15)}
+            \pgfmathsetmacro{\nbz}{1.20 + \tb*(0.94-1.20)}
+            \pgfmathsetmacro{\fa}{\na + \dx}
+            \pgfmathsetmacro{\faz}{\naz + \dy}
+            \pgfmathsetmacro{\fb}{\nb + \dx}
+            \pgfmathsetmacro{\fbz}{\nbz + \dy}
+            \fill[gray!15, draw=gray!55, line width=0.5pt]
+              (\na, \naz) -- (\fa, \faz) -- (\fb, \fbz) -- (\nb, \nbz) -- cycle;
+            \pgfmathsetmacro{\mx}{(\na+\fb)/2}
+            \pgfmathsetmacro{\my}{(\naz+\fbz)/2}
+            \foreach \jj in {-0.08,-0.02,0.04,0.10} {
+              \foreach \kk in {-0.03,0.03} {
+                \fill[gray!40] ({\mx+\jj},{\my+\kk}) circle (0.011);
+              }
+            }
+            \fill[gray!30, draw=gray!60, line width=0.4pt]
+              ({\fa-0.02},\faz) -- ({\fa+0.06},{\faz+0.02})
+              -- ({\fb+0.06},{\fbz+0.02}) -- ({\fb-0.02},\fbz) -- cycle;
+          }
+        \fi
+      \fi
+
+      \end{scope}
+    }
+  }
+}
+ 
+\endinput

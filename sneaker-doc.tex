@@ -1,0 +1,359 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[english]{babel}
+
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{parskip}
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue!60!black,
+	urlcolor=blue!60!black,
+}
+
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{sneaker}
+
+\newcommand{\meta}[1]{\textlangle\textit{#1}\textrangle}
+
+%% ---- Code listing style ----
+\lstset{
+	language=[LaTeX]TeX,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue!70!black},
+	commentstyle=\color{gray},
+	backgroundcolor=\color{gray!8},
+	frame=single,
+	framerule=0.4pt,
+	rulecolor=\color{gray!40},
+	xleftmargin=8pt,
+	xrightmargin=8pt,
+	breaklines=true,
+}
+
+%% ---- Title ----
+\title{%
+	\textbf{\textsf{Sneaker}}\\[4pt]
+	\large A configurable TikZ sneaker package\\[2pt]
+	\normalsize Version 1.0 \quad \today
+}
+\author{Aaron Molt\\\small\href{https://github.com/Aargon06/sneaker}{github.com/Aargon06/sneaker}}
+
+\begin{document}
+	
+	\maketitle
+	\tableofcontents
+	\vspace{1em}
+	
+	%% ------------------------------------------------------------------
+	\section{Introduction}
+	
+	What started as a small visual gimmick for the slides of my
+	Bachelor's thesis — a sneaker as a feature model to illustrate
+	variability and configuration — gradually grew into something more
+	elaborate. Every new talk added another option: laces, velcro,
+	patterns, wheels. At some point the \texttt{.sty} file had taken on
+	a life of its own, and it felt wrong to keep it to myself.
+	The \textsf{sneaker} package is the result of that growth,
+	cleaned up and made available so that anyone can drop a
+	configurable sneaker into their \LaTeX{} document with a single line.
+	
+	The package provides a single highly configurable TikZ \texttt{pic}
+	that draws a stylised sneaker in isometric-like perspective.
+	The shoe is customised via a key--value interface: colours, laces,
+	velcro straps, eyelets, decorative patterns, stitching detail,
+	and rolling wheels are all available as simple options.
+	
+	%% ------------------------------------------------------------------
+	\section{Requirements}
+	
+	\textsf{sneaker} requires a standard \LaTeXe{} installation with
+	the following packages, all of which ship with every major
+	\TeX{} distribution (TeX~Live, MiKTeX):
+	
+	\begin{itemize}
+		\item \textsf{tikz} (part of the \textsf{pgf} bundle)
+		\item TikZ library \texttt{calc}
+		\item \textsf{xcolor} (loaded automatically via TikZ)
+	\end{itemize}
+	
+	%% ------------------------------------------------------------------
+	\section{Usage}
+	
+	Load the package in the preamble and use the \texttt{pic} inside any
+	\texttt{tikzpicture} environment:
+	
+	\begin{lstlisting}
+		\usepackage{sneaker}
+		
+		\begin{tikzpicture}
+			\pic{sneaker={<options>}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	All options are passed as a comma-separated key--value list inside
+	\verb|sneaker={...}|. Passing no options gives a plain blue sneaker.
+	
+	%% ------------------------------------------------------------------
+	\section{Options Reference}
+	
+	\subsection{Main colour}
+	
+	\begin{tabular}{@{}lp{8.5cm}@{}}
+		\toprule
+		Key & Description \\
+		\midrule
+		\texttt{color=\meta{colour}} &
+		Sets the base colour of the whole shoe. Accepts any colour
+		expression valid for \verb|\colorlet|, e.g.\ \texttt{red},
+		\texttt{blue!40!black}, \texttt{teal}.
+		Default: \texttt{blue}. \\
+		\bottomrule
+	\end{tabular}
+	
+	\subsection{Feature flags}
+	
+	All flags default to \texttt{false}. Set them to \texttt{true} to
+	enable the feature.
+	
+	\begin{tabular}{@{}lp{8.5cm}@{}}
+		\toprule
+		Key & Description \\
+		\midrule
+		\texttt{laces}    & Draw shoelaces and a bow.
+		Requires \texttt{eyelets=true} to look correct. \\
+		\texttt{velcro}   & Draw velcro strap(s). When combined with
+		\texttt{laces}, a single strap is drawn across
+		the lace zone; standalone gives two straps. \\
+		\texttt{eyelets}  & Draw metal eyelets along the lace row. \\
+		\texttt{stitching}& Add dashed stitching lines on the upper and sole. \\
+		\texttt{rolls}    & Add three inline-skate-style wheels under the sole. \\
+		\bottomrule
+	\end{tabular}
+	
+	\subsection{Pattern}
+	
+	\begin{tabular}{@{}lp{8.5cm}@{}}
+		\toprule
+		Key & Description \\
+		\midrule
+		\texttt{pattern}               & Enable the side-panel decoration. \\
+		\texttt{pattern type=bolt}     & Lightning-bolt shape (default). \\
+		\texttt{pattern type=star}     & Five-pointed star. \\
+		\texttt{bolt}                  & Shorthand for \texttt{pattern=true, pattern type=bolt}. \\
+		\texttt{star}                  & Shorthand for \texttt{pattern=true, pattern type=star}. \\
+		\bottomrule
+	\end{tabular}
+	
+	\subsection{Individual component colours}
+	
+	Each key accepts any \textsf{xcolor}-compatible colour expression.
+	
+	\begin{tabular}{@{}lp{8.5cm}@{}}
+		\toprule
+		Key & Affected part \\
+		\midrule
+		\texttt{pattern color=\meta{colour}} & Pattern decoration. Default: white. \\
+		\texttt{tongue color=\meta{colour}}  & Tongue of the shoe. Default: tinted main colour. \\
+		\texttt{lace color=\meta{colour}}    & Laces and bow. Default: off-white. \\
+		\texttt{sole color=\meta{colour}}    & Sole area. Default: white. \\
+		\texttt{toe cap color=\meta{colour}} & Toe-cap panel. Default: light tinted main colour. \\
+		\bottomrule
+	\end{tabular}
+	
+	%% ------------------------------------------------------------------
+	\section{Examples}
+	
+	\subsection{Default sneaker}
+	
+	No options — plain blue sneaker, the package baseline.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={}};
+	\end{tikzpicture}
+	
+	\subsection{Colour}
+	
+	The entire shoe is tinted from a single \texttt{color} key.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={color=teal}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={color=teal}};
+	\end{tikzpicture}
+	
+	\subsection{Eyelets}
+	
+	Metal eyelets are placed along the lace row.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={eyelets=true}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={eyelets=true}};
+	\end{tikzpicture}
+	
+	\subsection{Laces}
+	
+	Shoelaces with a bow. Combine with \texttt{eyelets=true} for the
+	intended look.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={laces=true, eyelets=true,
+					lace color=red!60!orange}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={laces=true, eyelets=true,
+				lace color=red!60!orange}};
+	\end{tikzpicture}
+	
+	\subsection{Velcro}
+	
+	Two velcro straps, standalone (without laces).
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={velcro=true}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={velcro=true}};
+	\end{tikzpicture}
+	
+	\subsection{Laces combined with Velcro}
+	
+	When both are active, velcro appears as a single strap
+	across the lace zone.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={laces=true, eyelets=true, velcro=true}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={laces=true, eyelets=true, velcro=true}};
+	\end{tikzpicture}
+	
+	\subsection{Stitching}
+	
+	Dashed seam lines on the upper panel and sole.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={stitching=true}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={stitching=true}};
+	\end{tikzpicture}
+	
+	\subsection{Pattern — bolt}
+	
+	A lightning-bolt decoration on the side panel.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={bolt, pattern color=yellow}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={bolt, pattern color=yellow}};
+	\end{tikzpicture}
+	
+	\subsection{Pattern — star}
+	
+	A star decoration on the side panel.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={star, pattern color=pink}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={star, pattern color=pink}};
+	\end{tikzpicture}
+	
+	\subsection{Rolls}
+	
+	Three inline-skate-style wheels are added under the sole.
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={rolls=true, color=orange}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={rolls=true, color=orange}};
+	\end{tikzpicture}
+	
+	\subsection{Fully loaded — all options at once}
+	
+	\begin{lstlisting}
+		\begin{tikzpicture}[scale=0.6]
+			\pic{sneaker={color=red!50!black, star,
+					pattern color=yellow, tongue color=orange,
+					lace color=cyan!60, sole color=teal!15,
+					toe cap color=pink, laces=true,
+					eyelets=true, stitching=true,
+					velcro=true, rolls=true}};
+		\end{tikzpicture}
+	\end{lstlisting}
+	
+	\begin{tikzpicture}[scale=0.6]
+		\pic{sneaker={color=red!50!black, star,
+				pattern color=yellow, tongue color=orange,
+				lace color=cyan!60, sole color=teal!15,
+				toe cap color=pink, laces=true,
+				eyelets=true, stitching=true,
+				velcro=true, rolls=true}};
+	\end{tikzpicture}
+	
+	%% ------------------------------------------------------------------
+	\section{License}
+	
+	This work is copyright \textcopyright{Aaron Molt} 2026 and may be
+	distributed and/or modified under the conditions of the
+	\href{https://www.latex-project.org/lppl.txt}{LaTeX Project Public
+		License}, version 1.3c or later.
+		
+	\medskip
+	\noindent\textbf{Disclaimer.} The sneaker design in this package is
+	entirely fictional and created from scratch. It is not based on,
+	derived from, or intended to resemble any real product, brand, or
+	trademark. Any similarity to existing footwear designs is purely
+	coincidental.
+	
+\end{document}
