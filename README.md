@@ -35,7 +35,7 @@ Every part of the shoe can be toggled to change the style of the sneaker:
 *   **Velcro Straps:** Choose between a classic two-strap look or a hybrid lace-and-strap design.
 *   **Metal Eyelets:** A row of circular eyelets for the lace zone.
 *   **Detail Stitching:** Adds dashed seam lines to the upper panels and the sole for a realistic touch.
-*   **Inline Wheels:** Transform the sneaker into a roller skate with three inline wheels (`rolls`).
+*   **Inline Wheels:** Transform the sneaker into a roller skate with two inline wheels (`rolls`).
 
 ### Design & Patterns
 Add a unique look to the side panel with built-in decorative patterns:
